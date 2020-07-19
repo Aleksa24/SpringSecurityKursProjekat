@@ -11,6 +11,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -29,6 +30,15 @@ public class ApplicationSercurityConfig extends WebSecurityConfigurerAdapter {
     private final ApplicationUserService applicationUserService;
     private final SecretKey secretKey;
     private final JwtConfig jwtConfig;
+    private static final String[] AUTH_WHITELIST = {
+            "/swagger-resources/**",
+            "/swagger-ui.html",
+            "/v2/api-docs",
+            "/webjars/**",
+            "/swagger.json",
+            "/configuration/security",
+            "/configuration/ui"
+    };
 
     @Autowired
     public ApplicationSercurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService, SecretKey secretKey, JwtConfig jwtConfig) {
@@ -49,7 +59,7 @@ public class ApplicationSercurityConfig extends WebSecurityConfigurerAdapter {
                     .addFilter(new JwtUsernameAndPasswordAuthenticationFilter(authenticationManager(), jwtConfig, secretKey))//ovako se dodaje filter gde se koristi jwt token
                     .addFilterAfter(new JwtTokenVerifier(secretKey, jwtConfig),JwtUsernameAndPasswordAuthenticationFilter.class)
                 .authorizeRequests()
-                .antMatchers("/","index","/css/*","/js/*").permitAll()
+                .antMatchers("/","/index","/css/*","/js/*","/v2/api-docs","/swagger-ui.html").permitAll()
                 .antMatchers("/api/**").hasRole(STUDENT.name())
 //                .antMatchers(HttpMethod.DELETE, "managment/api.**").hasAuthority(COURSE_WRITE.name())
 //                .antMatchers(HttpMethod.POST, "managment/api.**").hasAuthority(COURSE_WRITE.name())
@@ -79,36 +89,7 @@ public class ApplicationSercurityConfig extends WebSecurityConfigurerAdapter {
 
     }
 
-//    @Override
-//    @Bean
-//    protected UserDetailsService userDetailsService() {
-//        UserDetails pera = User.builder()
-//                .username("pera")
-//                .password(passwordEncoder.encode("pera"))
-////                .roles(STUDENT.name())// ROLE_STUDENT
-//                .authorities(STUDENT.getGrantedAuthorities())
-//                .build();
-//
-//        UserDetails lindaUser = User.builder()
-//                .username("linda")
-//                .password(passwordEncoder.encode("password123"))
-////                .roles(ADMIN.name())//ROLE_ADMIN
-//                .authorities(ADMIN.getGrantedAuthorities())
-//                .build();
-//
-//        UserDetails tomUser = User.builder()
-//                .username("tom")
-//                .password(passwordEncoder.encode("password123"))
-////                .roles(ADMINTRAINEE.name())//ROLE_ADMINTRAINEE
-//                .authorities(ADMINTRAINEE.getGrantedAuthorities())
-//                .build();
-//
-//        return new InMemoryUserDetailsManager(
-//                pera,
-//                lindaUser,
-//                tomUser
-//        );
-//    }
+
 
 
     @Override
@@ -122,5 +103,11 @@ public class ApplicationSercurityConfig extends WebSecurityConfigurerAdapter {
         provider.setPasswordEncoder(passwordEncoder);
         provider.setUserDetailsService(applicationUserService);
         return  provider;
+    }
+
+    //nesto za SWAGGER?!?!
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.ignoring().antMatchers(AUTH_WHITELIST);
     }
 }
